@@ -1,7 +1,14 @@
 import enum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import String, Enum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.database.base import Base
+
+
+if TYPE_CHECKING:
+    from app.modules.project.model import Project
 
 
 class UserRole(str, enum.Enum):
@@ -13,18 +20,17 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(
-        Integer,
+    id: Mapped[int] = mapped_column(
         primary_key=True,
         index=True
     )
 
-    name = Column(
+    name: Mapped[str] = mapped_column(
         String(100),
         nullable=False
     )
 
-    email = Column(
+    email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
         nullable=False,
@@ -32,13 +38,19 @@ class User(Base):
     )
 
     # Store bcrypt hashed password, never plain password
-    password = Column(
+    password: Mapped[str] = mapped_column(
         String(255),
         nullable=False
     )
 
-    role = Column(
+    role: Mapped[UserRole] = mapped_column(
         Enum(UserRole),
         default=UserRole.client,
         nullable=False
+    )
+
+    # Relationship with Project
+    projects: Mapped[list["Project"]] = relationship(
+        "Project",
+        back_populates="client"
     )
