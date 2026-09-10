@@ -1,15 +1,25 @@
 from pathlib import Path
 
-
-from app.api.v1.router import router as api_router
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.v1.router import router as api_router
+
 from app.database.base import Base
 from app.database.connection import engine
+
+# =========================================================
+# MODELS
+# =========================================================
+
+# Import models so SQLAlchemy registers them
+from app.modules.auth.models import User
+from app.modules.project.model import Project
+
+# =========================================================
+# ROUTERS
+# =========================================================
 
 from app.modules.auth.route import router as auth_router
 from app.modules.client.router import router as client_router
@@ -17,6 +27,8 @@ from app.modules.freelancer.router import router as freelancer_router
 
 from app.modules.chat.routers import router as chat_router
 from app.modules.chat.websocket import router as chat_ws_router
+
+
 # =========================================================
 # DATABASE
 # =========================================================
@@ -72,19 +84,17 @@ app.mount(
 # ROUTERS
 # =========================================================
 
-
 app.include_router(auth_router)
 app.include_router(client_router)
 app.include_router(freelancer_router)
 
-
 app.include_router(chat_router)
 app.include_router(chat_ws_router)
 
-
-
-
-app.include_router(api_router,prefix="/api/v1")
+app.include_router(
+    api_router,
+    prefix="/api/v1",
+)
 
 
 # =========================================================
@@ -96,7 +106,3 @@ def read_root():
     return {
         "message": "Freelancing Platform API"
     }
-
-
-
-
