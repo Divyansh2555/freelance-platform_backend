@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class FreelancerProfileCreate(BaseModel):
@@ -9,6 +10,7 @@ class FreelancerProfileCreate(BaseModel):
     experience: int = 0
     hourly_rate: Optional[float] = None
     location: Optional[str] = None
+    profile_image: Optional[str] = None
 
 
 class FreelancerProfileUpdate(BaseModel):
@@ -18,6 +20,7 @@ class FreelancerProfileUpdate(BaseModel):
     experience: Optional[int] = None
     hourly_rate: Optional[float] = None
     location: Optional[str] = None
+    profile_image: Optional[str] = None
 
 
 class FreelancerProfileResponse(BaseModel):
@@ -29,6 +32,6 @@ class FreelancerProfileResponse(BaseModel):
     experience: int
     hourly_rate: Optional[float] = None
     location: Optional[str] = None
+    profile_image: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

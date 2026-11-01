@@ -1,6 +1,14 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Enum,
+    DateTime,
+)
+from sqlalchemy.orm import relationship
+
 from app.database.base import Base
 
 
@@ -31,7 +39,6 @@ class User(Base):
         index=True
     )
 
-    # Store bcrypt hashed password, never plain password
     password = Column(
         String(255),
         nullable=False
@@ -41,4 +48,29 @@ class User(Base):
         Enum(UserRole),
         default=UserRole.client,
         nullable=False
+    )
+
+    # =========================
+    # Password Reset
+    # =========================
+
+    reset_token_hash = Column(
+        String(64),
+        nullable=True,
+        index=True
+    )
+
+    reset_token_expires = Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    # =========================
+    # Client Projects
+    # =========================
+
+    projects = relationship(
+        "Project",
+        back_populates="client",
+        cascade="all, delete-orphan",
     )

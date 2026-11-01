@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
 from app.database.session import get_db
 from app.modules.auth.models import User
-from app.modules.freelancer.schema import (
-    FreelancerProfileCreate,
-    FreelancerProfileUpdate,
-    FreelancerProfileResponse,
-)
+from app.modules.freelancer.schema import FreelancerProfileResponse
 from app.modules.freelancer import crud
 
 
@@ -18,43 +23,79 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=FreelancerProfileResponse)
-def create_profile(
-    profile: FreelancerProfileCreate,
+# =========================================================
+# CREATE PROFILE
+# =========================================================
+
+@router.post(
+    "/",
+    response_model=FreelancerProfileResponse,
+)
+async def create_profile(
+    title: str = Form(...),
+    bio: Optional[str] = Form(None),
+    skills: Optional[str] = Form(None),
+    experience: int = Form(0),
+    hourly_rate: Optional[float] = Form(None),
+    location: Optional[str] = Form(None),
+    profile_image: Optional[UploadFile] = File(None),
+
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return crud.create_profile(
-        db,
-        profile,
-        current_user.id,
+    profile = await crud.create_profile(
+        db=db,
+        user_id=current_user.id,
+        title=title,
+        bio=bio,
+        skills=skills,
+        experience=experience,
+        hourly_rate=hourly_rate,
+        location=location,
+        profile_image=profile_image,
     )
 
+    return profile
 
-@router.get("/", response_model=list[FreelancerProfileResponse])
+
+# =========================================================
+# GET ALL PROFILES
+# =========================================================
+
+@router.get(
+    "/",
+    response_model=list[FreelancerProfileResponse],
+)
 def get_profiles(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     return crud.get_profiles(
-        db,
-        current_user.id,
+        db=db,
+        user_id=current_user.id,
     )
 
 
-@router.get("/{profile_id}", response_model=FreelancerProfileResponse)
+# =========================================================
+# GET SINGLE PROFILE
+# =========================================================
+
+@router.get(
+    "/{profile_id}",
+    response_model=FreelancerProfileResponse,
+)
 def get_profile(
     profile_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     profile = crud.get_profile(
-        db,
-        profile_id,
-        current_user.id,
+        db=db,
+        profile_id=profile_id,
+        user_id=current_user.id,
     )
 
-    if not profile:
+    if profile is None:
         raise HTTPException(
             status_code=404,
             detail="Profile not found",
@@ -63,28 +104,74 @@ def get_profile(
     return profile
 
 
-@router.put("/{profile_id}", response_model=FreelancerProfileResponse)
-def update_profile(
+# =========================================================
+# UPDATE PROFILE
+# =========================================================
+
+@router.put(
+    "/{profile_id}",
+    response_model=FreelancerProfileResponse,
+)
+async def update_profile(
     profile_id: int,
-    profile: FreelancerProfileUpdate,
+
+    title: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    skills: Optional[str] = Form(None),
+    experience: Optional[int] = Form(None),
+    hourly_rate: Optional[float] = Form(None),
+    location: Optional[str] = Form(None),
+
+    profile_image: Optional[UploadFile] = File(None),
+
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    updated = crud.update_profile(
-        db,
-        profile_id,
-        profile,
-        current_user.id,
+    # -----------------------------------------------------
+    # Find existing profile
+    # -----------------------------------------------------
+
+    existing_profile = crud.get_profile(
+        db=db,
+        profile_id=profile_id,
+        user_id=current_user.id,
     )
 
-    if not updated:
+    if existing_profile is None:
         raise HTTPException(
             status_code=404,
             detail="Profile not found",
         )
 
-    return updated
+    # -----------------------------------------------------
+    # Update profile
+    # -----------------------------------------------------
 
+    updated_profile = await crud.update_profile(
+        db=db,
+        profile_id=profile_id,
+        user_id=current_user.id,
+        title=title,
+        bio=bio,
+        skills=skills,
+        experience=experience,
+        hourly_rate=hourly_rate,
+        location=location,
+        profile_image=profile_image,
+    )
+
+    if updated_profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Profile not found",
+        )
+
+    return updated_profile
+
+
+# =========================================================
+# DELETE PROFILE
+# =========================================================
 
 @router.delete("/{profile_id}")
 def delete_profile(
@@ -92,16 +179,18 @@ def delete_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted = crud.delete_profile(
-        db,
-        profile_id,
-        current_user.id,
+    deleted_profile = crud.delete_profile(
+        db=db,
+        profile_id=profile_id,
+        user_id=current_user.id,
     )
 
-    if not deleted:
+    if deleted_profile is None:
         raise HTTPException(
             status_code=404,
             detail="Profile not found",
         )
 
-    return {"message": "Profile deleted"}
+    return {
+        "message": "Profile deleted successfully"
+    }

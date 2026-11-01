@@ -1,4 +1,9 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    ConfigDict,
+    Field,
+)
 
 from app.modules.auth.models import UserRole
 
@@ -21,4 +26,29 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: UserRole
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+# =========================
+# Forgot Password
+# =========================
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+# =========================
+# Reset Password
+# =========================
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(
+        min_length=20
+    )
+
+    new_password: str = Field(
+        min_length=6,
+        max_length=128
+    )
